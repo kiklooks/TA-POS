@@ -1,8 +1,36 @@
-{% extends "posApp/base.html" %} {% load humanize %} {% block pageContent %}
+{% extends "posApp/base.html" %} {% load humanize currency_filters %} {% block pageContent %}
 <div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12">
     <div class="mdc-card py-2">
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
             <h4 class="card-title mb-0">Riwayat Transaksi</h4>
+            <form method="get" class="d-flex align-items-center gap-2 flex-wrap">
+                <select name="year" class="form-select form-select-sm">
+                    <option value="">-- Semua Tahun --</option>
+                    {% for year_option in year_choices %}
+                    <option value="{{ year_option }}" {% if selected_year == year_option|stringformat:'s' %}selected{% endif %}>{{ year_option }}</option>
+                    {% endfor %}
+                </select>
+                <select name="month" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">-- Semua Bulan --</option>
+                    {% for month_num, month_name in month_choices %}
+                    <option value="{{ month_num }}" {% if selected_month == month_num|stringformat:'s' %}selected{% endif %}>{{ month_name }}</option>
+                    {% endfor %}
+                </select>
+                <select name="start_month" class="form-select form-select-sm">
+                    <option value="">-- Dari Bulan --</option>
+                    {% for month_num, month_name in month_choices %}
+                    <option value="{{ month_num }}" {% if selected_start_month == month_num|stringformat:'s' %}selected{% endif %}>{{ month_name }}</option>
+                    {% endfor %}
+                </select>
+                <select name="end_month" class="form-select form-select-sm">
+                    <option value="">-- Sampai Bulan --</option>
+                    {% for month_num, month_name in month_choices %}
+                    <option value="{{ month_num }}" {% if selected_end_month == month_num|stringformat:'s' %}selected{% endif %}>{{ month_name }}</option>
+                    {% endfor %}
+                </select>
+                <button class="btn btn-sm btn-outline-primary" type="submit">Filter</button>
+                <a class="btn btn-sm btn-success" href="{% url 'sales-export-excel' %}?year={{ selected_year }}&month={{ selected_month }}&start_month={{ selected_start_month }}&end_month={{ selected_end_month }}">Export Excel</a>
+            </form>
         </div>
     </div>
 </div>
@@ -20,11 +48,10 @@
                 </colgroup>
                 <thead>
                     <tr>
-                        <th class="text-center py-1">#</th>
+                        <th class="text-center py-1 px-2">No</th>
                         <th class="text-center py-1">Tanggal | Waktu</th>
                         <th class="text-center py-1">Kode Transaksi</th>
                         <th class="text-center py-1">Total</th>
-                        <th class="text-center py-1">Pajak</th>
                         <th class="text-center py-1">Item</th>
                         <th class="text-center py-1">Aksi</th>
                     </tr>
@@ -32,11 +59,10 @@
                 <tbody>
                     {% for sale in sale_data %}
                     <tr>
-                        <td class="px-2 py-1 text-center">{{ sale.id }}</td>
-                        <td class="px-2 py-1 text-start">{{ sale.date_added|date:'Y-m-d H:i' }}</td>
+                        <td class="px-2 py-1 text-center">{{ forloop.counter }}</td>
+                        <td class="px-2 py-1 text-start">{{ sale.date_added|date:'d M Y H:i' }}</td>
                         <td class="px-2 py-1 text-start">{{ sale.code }}</td>
-                        <td class="px-2 py-1 text-end">{{ sale.grand_total|intcomma }}</td>
-                        <td class="px-2 py-1 text-end">({{ sale.tax }}%) {{ sale.tax_amount|intcomma:2 }}</td>
+                        <td class="px-2 py-1 text-end">{{ sale.grand_total|rupiah }}</td>
                         <td class="px-2 py-1 text-center">{{ sale.item_count|intcomma }}</td>
                         <td class="px-2 py-1 text-center">
                             <button class="mdc-button mdc-button--raised p-1 icon-button filled-button--light mdc-ripple-upgraded view-data" type="button" data-id="{{ sale.id }}" title="View Receipt">
@@ -60,7 +86,7 @@
             uni_modal("Transaction's Receipt", "{% url 'receipt-modal' %}?id=" + $(this).attr('data-id'))
         })
         $('.delete-data').click(function() {
-            _conf("Are you sure to delete <b>" + $(this).attr('data-code') + "</b> Transaction record?", "delete_sale", [$(this).attr('data-id')])
+            _conf("Apakah anda yakin ingin menghapus riwayat transaksi <b>" + $(this).attr('data-code') + "</b> ?", "delete_sale", [$(this).attr('data-id')])
         })
 
     })

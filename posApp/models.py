@@ -39,7 +39,6 @@ class Products(models.Model):
     code = models.CharField(max_length=100)
     category_id = models.ForeignKey(Category, on_delete=models.CASCADE)
     name = models.TextField()
-    # description = models.TextField()
     price = models.FloatField(default=0)
     status = models.IntegerField(default=1)
     stock = models.BigIntegerField(default=0)

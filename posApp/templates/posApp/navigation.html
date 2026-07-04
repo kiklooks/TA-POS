@@ -2,8 +2,9 @@
 <!-- partial:partials/_sidebar.html -->
 <aside class="mdc-drawer mdc-drawer--dismissible mdc-drawer--open bg-dark bg-gradient">
     <div class="mdc-drawer__header border-bottom border-light">
-        <a href="{% url 'home-page' %}" class="brand-logo">
-            <h3 class="text-center text-light">Koperasi SMAN 1 Bobotsari</h3>
+        <a href="{% url 'home-page' %}" class="brand-logo text-center">
+            <img src="{% static 'posApp/assets/material-admin/images/logo_smansabos.png' %}" alt="Logo" style="height:70px;">
+            <h3 class="text-center text-light">Koperasi Sekolah SMAN 1 Bobotsari</h3>
         </a>
     </div>
     <div class="mdc-drawer__content">
@@ -25,13 +26,18 @@
                     </a>
                 </div>
                 <div class="mdc-list-item mdc-drawer-item">
+                    <a class="mdc-drawer-link" href="{% url 'restock-list' %}">
+                        <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">store</i> Daftar Restok 
+                    </a>
+                </div>
+                <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-drawer-link" href="{% url 'pos-page' %}">
                         <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">payment</i> Pembayaran
                     </a>
                 </div>
                 <div class="mdc-list-item mdc-drawer-item">
                     <a class="mdc-drawer-link" href="{% url 'sales-page' %}">
-                        <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">receipt</i> Transaksi
+                        <i class="material-icons mdc-list-item__start-detail mdc-drawer-item-icon" aria-hidden="true">receipt</i> Riwayat Transaksi
                     </a>
                 </div>
             </nav>

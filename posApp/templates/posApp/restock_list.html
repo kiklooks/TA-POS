@@ -1,0 +1,69 @@
+{% extends "posApp/base.html" %}
+{% load humanize %}
+
+{% block pageContent %}
+<div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12">
+    <div class="mdc-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="card-title mb-0">📦 {{ page_title }}!</h4>
+            <a href="{% url 'product-page' %}" class="btn btn-sm btn-primary">
+                <i class="mdi mdi-arrow-left"></i> Lihat Produk!
+            </a>
+        </div>
+
+        {% if products %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-dark text-white" >
+                    <tr class="text-center">
+                        <th>No</th>
+                        <th>Kode Produk</th>
+                        <th>Nama Produk</th>
+                        <th>Kategori</th>
+                        <th>Stok Saat Ini</th>
+                        <th>Rekomendasi Restok</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr class="text-center {% if product.stock < 3 %}table-danger{% elif product.stock < 5 %}table-warning{% endif %}">
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ product.code }}</td>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.category_id }}</td>
+                        <td>{{ product.stock }}</td>
+                        <td>
+                            {% if product.latest_f_restock %}
+                                {{ product.latest_f_restock|intcomma }}
+                            {% else %}
+                                <span class="text-muted">Belum ada data</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <button class="mdc-button mdc-button--raised p-1 icon-button filled-button--light mdc-ripple-upgraded edit-data" type="button" data-id="{{ product.pk }}" title="Edit Restok">
+                                <i class="material-icons mdc-button__icon">edit</i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-success text-center m-3">
+            🎉 Semua produk memiliki stok aman!
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock pageContent %}
+{% block ScriptBlock %}
+<script>
+    $(function() {
+        $('.edit-data').click(function() {
+            uni_modal("Edit Produk", "{% url 'manage_products-page' %}?id=" + $(this).attr('data-id'))
+        })
+    })
+</script>
+{% endblock ScriptBlock %}

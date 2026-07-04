@@ -1,4 +1,6 @@
-{% extends "posApp/base.html" %} {% block pageContent %}
+{% extends "posApp/base.html" %}
+{% load currency_filters %}
+{% block pageContent %}
 <div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12">
     <div class="mdc-card py-2">
         <div class="d-flex justify-content-between align-items-center">
@@ -39,15 +41,23 @@
                     <tr>
                         <td class="px-2 py-1 text-center">{{ forloop.counter }}</td>
                         <td class="px-2 py-1 text-start">{{ product.code }} - {{ product.name }}</td>
-                        <td class="px-2 py-1 text-start">{{ product.category_id }}</td>
-                        <td class="px-2 py-1 text-start">{{ product.stock }}</td>
-                        <td class="px-2 py-1 text-start">{{ product.f_restock }}</td>
-                        <td class="px-2 py-1 text-start">{{ product.sale }}</td>
-                        <td class="px-2 py-1 text-start">{{ product.price }}</td>
+                        <td class="px-2 py-1 text-center">{{ product.category_id }}</td>
+                        <td class="px-2 py-1 text-center">{{ product.stock }}</td>
+                        <td class="px-2 py-1 text-center">{{ product.latest_sale }}</td>
+                        <td class="px-2 py-1 text-center">
+                            {% if product.latest_f_restock >= product.stock  %}
+                            {{ product.latest_f_restock }}
+                            {% else %}
+                            0
+                            {% endif %}
+                        </td>
+                        <td class="px-2 py-1 text-center">{{ product.price|rupiah }}</td>
                         <td class="px-2 py-1 text-center">
                             {% if product.status == 1 %}
-                            <span class="badge bg-primary rounded-pill px-3">Tersedia</span> {% else %}
-                            <span class="badge bg-secondary rounded-pill px-3">Tidak Tersedia</span> {% endif %}
+                            <span class="badge bg-primary rounded-pill px-3">Tersedia</span> 
+                            {% else %}
+                            <span class="badge bg-secondary rounded-pill px-3">Tidak Tersedia</span> 
+                            {% endif %}
                         </td>
                         <td class="px-2 py-1 text-center">
                             <button class="mdc-button mdc-button--raised p-1 icon-button filled-button--light mdc-ripple-upgraded edit-data" type="button" data-id="{{ product.pk }}" title="Edit">
@@ -74,7 +84,7 @@
             uni_modal("Edit Produk", "{% url 'manage_products-page' %}?id=" + $(this).attr('data-id'))
         })
         $('.delete-data').click(function() {
-            _conf("Are you sure to delete this Product?", "delete_product", [$(this).attr('data-id')])
+            _conf("Apakah yakin ingin menghapus produk ini?", "delete_product", [$(this).attr('data-id')])
         })
 
         $('#uni_modal').on('shown.bs.modal', function() {

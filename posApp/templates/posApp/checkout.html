@@ -1,43 +1,86 @@
 {% load humanize %}
 <div class="container-fluid">
-    <form action="" id="checkout-form">
-        <div class="form-group mb-3">
-            <label for="payable_amount" class="control-label">Jumlah yang harus dibayar</label>
-            <input type="text" id="payable_amount" class="form-control form-control-lg rounded-0 text-end" value="{{ grand_total|intcomma }}" required disabled>
-        </div>
-        <div class="form-group mb-3">
-            <label for="tendered_amount" class="control-label">Jumlah Uang</label>
-            <input type="number" step="any" id="tendered_amount" class="form-control form-control-lg rounded-0 text-end" value="0" required>
-        </div>
-        <div class="form-group mb-3">
-            <label for="payment_change" class="control-label">Jumlah Kembalian</label>
-            <input type="text" id="payment_change" class="form-control form-control-lg rounded-0 text-end" value="{{ 0|intcomma }}" required disabled>
-        </div>
-    </form>
+  <form action="" id="checkout-form">
+    <div class="form-group mb-3">
+      <label for="payable_amount" class="control-label"
+        >Jumlah yang harus dibayar</label
+      >
+      <input
+        type="text"
+        id="payable_amount"
+        class="form-control form-control-lg rounded-0 text-end"
+        value="{{ grand_total|intcomma }}"
+        required
+        readonly
+      />
+    </div>
+    <div class="form-group mb-3">
+      <label for="tendered_amount" class="control-label">Jumlah Uang</label>
+      <input
+        type="number"
+        step="any"
+        id="tendered_amount"
+        class="form-control form-control-lg rounded-0 text-end"
+        value="0"
+        required
+      />
+    </div>
+    <div class="form-group mb-3">
+      <label for="payment_change" class="control-label">Jumlah Kembalian</label>
+      <input
+        type="text"
+        id="payment_change"
+        class="form-control form-control-lg rounded-0 text-end"
+        value="{{ 0|intcomma }}"
+        required
+        disabled
+      />
+    </div>
+  </form>
 </div>
 <script>
-    $(function() {
-        $('#tendered_amount').on('input keypress keyup keydown', function() {
-            var tendered_amount = $('#tendered_amount').val()
-            var payable = $('#payable_amount').val()
-            tendered_amount = tendered_amount.replace(/,/gi, '')
-            payable = payable.replace(/,/gi, '')
-            var change = 0
-            tendered_amount = tendered_amount > 0 ? tendered_amount : 0;
-            $('[name="tendered_amount"]').val(tendered_amount)
-            change = parseFloat(tendered_amount) - parseFloat(payable)
-            console.log(tendered_amount, payable)
-            $('#payment_change').val(parseFloat(change).toLocaleString('en-US'))
-            $('[name="amount_change"]').val(change)
+  $(function () {
+    function calculateChange() {
+      let tendered_amount = $("#tendered_amount").val() || "0";
+      let payable = $("#payable_amount").val() || "0";
 
-        })
-        $('#checkout-form').submit(function(e) {
-            e.preventDefault();
-            if ($('[name="amount_change"]').val() < 0) {
-                alert("Tendered Amount is lower that Payable Amount")
-                return false;
-            }
-            $('#pos-form').submit()
-        })
-    })
+      // Remove commas and convert to number
+      tendered_amount = parseFloat(tendered_amount.replace(/,/g, "")) || 0;
+      payable = parseFloat(payable.replace(/,/g, "")) || 0;
+
+      let change = tendered_amount - payable;
+
+      // Prevent negative change display
+      $("#payment_change").val(
+        change >= 0
+          ? change.toLocaleString("en-US", { maximumFractionDigits: 2 })
+          : "0"
+      );
+
+      $('[name="tendered_amount"]').val(tendered_amount);
+      $('[name="amount_change"]').val(change);
+    }
+
+    // Calculate on every input
+    $("#tendered_amount").on("input", calculateChange);
+
+    $("#checkout-form").submit(function (e) {
+      e.preventDefault();
+
+      let change = parseFloat($('[name="amount_change"]').val()) || 0;
+
+      if (change < 0) {
+        alert(
+          "Jumlah uang yang diberikan kurang dari jumlah yang harus dibayar"
+        );
+        return false;
+      }
+      if (parseFloat($("#tendered_amount").val()) <= 0) {
+        alert("Masukkan jumlah uang yang valid");
+        return false;
+      }
+
+      $("#pos-form").submit();
+    });
+  });
 </script>
