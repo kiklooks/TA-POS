@@ -27,15 +27,19 @@
                 <option value="{{ category.id }}">{{ category.name }}</option>
                 {% endif %}
             {% endfor %}
-        </select>
-            
-            <div class="form-group mb-3">
-                <label for="stock" class="control-label">Stok</label>
-                <input type="text" name="stock" id="stock" class="form-control form-control-sm rounded-0" value="0" required>
-            </div>
+            </select>
+        </div>
+        <div class="form-group mb-3">
+            <label for="stock" class="control-label">Stok</label>
+            <input type="number" name="stock" id="stock" class="form-control form-control-sm rounded-0" min="0" step="1" value="{% if product.stock %}{{product.stock}}{% else %}0{% endif %}" required>
+        </div>
+        <div class="form-group mb-3">
+            <label for="modal" class="control-label">Modal</label>
+            <input type="text" name="modal" id="modal" class="form-control form-control-sm rounded-0" placeholder="Contoh: 10000 atau Rp10.000" value="{% if product.modal %}{{product.modal}}{% endif %}" required>
+        </div>
             <div class="form-group mb-3">
                 <label for="price" class="control-label">Harga</label>
-                <input type="text" name="price" id="price" class="form-control form-control-sm rounded-0" value="{% if product.price %}{{product.price}}{% endif %}" required>
+                <input type="text" name="price" id="price" class="form-control form-control-sm rounded-0" placeholder="Contoh: 10000 atau Rp10.000" value="{% if product.price %}{{product.price}}{% endif %}" required>
             </div>
     </form>
     </div>
@@ -50,6 +54,14 @@
                 el.hide()
                 if (_this[0].checkValidity() == false) {
                     _this[0].reportValidity();
+                    return false;
+                }
+                var price = parseFloat($('#price').val().toString().replace(/[^0-9.,]/g, '').replace(/\./g, '').replace(/,/g, '.')) || 0;
+                var modal = parseFloat($('#modal').val().toString().replace(/[^0-9.,]/g, '').replace(/\./g, '').replace(/,/g, '.')) || 0;
+                if (modal > price) {
+                    el.text('Modal tidak boleh lebih besar dari harga jual');
+                    _this.prepend(el);
+                    el.show('slow');
                     return false;
                 }
                 start_loader();

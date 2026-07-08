@@ -44,9 +44,9 @@
       let tendered_amount = $("#tendered_amount").val() || "0";
       let payable = $("#payable_amount").val() || "0";
 
-      // Remove commas and convert to number
-      tendered_amount = parseFloat(tendered_amount.replace(/,/g, "")) || 0;
-      payable = parseFloat(payable.replace(/,/g, "")) || 0;
+      // Normalize separators (handle both commas and dots) and convert to number
+      tendered_amount = parseFloat(tendered_amount.replace(/[.,]/g, "")) || 0;
+      payable = parseFloat(payable.replace(/[.,]/g, "")) || 0;
 
       let change = tendered_amount - payable;
 

@@ -99,15 +99,11 @@
                   <span class="h3 fw-bold" id="tax_amount">0.00</span>
                 </dd>
                 {% endcomment %}
-                <dt class="h4 fw-bold text-light">Grand Total</dt>
-                <dd class="text-end py-1 px-2 rounded-0 bg-light">
+                <div style="display:none">
                   <input type="hidden" name="grand_total" value="0" />
                   <input type="hidden" name="tendered_amount" value="0" />
                   <input type="hidden" name="amount_change" value="0" />
-                  <input type="hidden" name="grand_total" value="0" />
-                  <input type="hidden" name="grand_total" value="0" />
-                  <span class="h3 fw-bold" id="grand_total">Rp0</span>
-                </dd>
+                </div>
               </dl>
             </div>
           </div>
@@ -140,6 +136,7 @@
     <td class="px-2 py-1">
       <input type="hidden" name="product_id[]" />
       <input type="hidden" name="price[]" />
+      <input type="hidden" name="modal[]" />
       <input
         type="number"
         name="qty[]"
@@ -194,7 +191,7 @@
     var tax_amount = parseFloat(sub_total) * parseFloat(tax);
     $("#tax_amount").text(formatRupiah(tax_amount));
     $('[name="tax_amount"]').val(parseFloat(tax_amount));
-    $("#grand_total").text(formatRupiah(sub_total));
+    // Update grand total hidden value (visible display removed)
     $('[name="grand_total"]').val(parseFloat(sub_total));
     $("#sub_total").text(formatRupiah(sub_total));
     $('[name="sub_total"]').val(parseFloat(sub_total));
@@ -237,6 +234,7 @@
         tr.find('[name="qty[]"]').val(qty);
         tr.find('[name="product_id[]"]').val(id);
         tr.find('[name="price[]"]').val(data.price);
+        tr.find('[name="modal[]"]').val(data.modal);
         tr.find(".product_name").text(data.name);
         tr.find(".product_price").text(formatRupiah(data.price));
         tr.find(".product_total").text(formatRupiah(data.price * qty));

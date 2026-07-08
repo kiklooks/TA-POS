@@ -17,6 +17,34 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from django.http import HttpResponse
 
+
+def parse_number(value, default=0, as_int=False):
+    if value is None:
+        return default
+    value = str(value).strip()
+    if value == "":
+        return default
+    # Remove currency labels and whitespace
+    value = value.replace("Rp", "").replace("rp", "").replace(" ", "")
+    # Normalize Indonesian thousand/decimal separators
+    if "," in value and "." in value:
+        value = value.replace(".", "").replace(",", ".")
+    elif "." in value and "," not in value:
+        parts = value.split(".")
+        if len(parts) > 1 and all(len(part) == 3 for part in parts[1:]):
+            value = "".join(parts)
+    elif "," in value and "." not in value:
+        parts = value.split(",")
+        if len(parts) > 1 and all(len(part) == 3 for part in parts[1:]):
+            value = "".join(parts)
+        else:
+            value = value.replace(",", ".")
+    try:
+        result = float(value)
+        return int(result) if as_int else result
+    except ValueError:
+        return default
+
 # Login
 def login_user(request):
     logout(request)
@@ -63,12 +91,18 @@ def home(request):
         date_added__day = current_day
     ).all()
     total_sales = sum(today_sales.values_list('grand_total',flat=True))
+    top_products = (
+        salesItems.objects.values('product_id', 'product_id__name')
+        .annotate(total_qty=Sum('qty'))
+        .order_by('-total_qty')[:10]
+    )
     context = {
         'page_title':'Home',
         'categories' : categories,
         'products' : products,
         'transaction' : transaction,
         'total_sales' : total_sales,
+        'top_products': top_products,
     }
     return render(request, 'posApp/home.html',context)
 
@@ -227,16 +261,26 @@ def save_product(request):
         try:
             # Update
             if (data['id']).isnumeric() and int(data['id']) > 0 :
-                add_stock = int(data['stock'])
+                add_stock = parse_number(data['stock'], default=0, as_int=True)
                 new_stock = Products.objects.filter(id = data['id']).first().stock + add_stock
-                save_product = Products.objects.filter(id = data['id']).update(code=data['code'], category_id=category, name=data['name'], price = float(data['price']), stock=new_stock)
+                price = parse_number(data['price'], default=0.0)
+                modal = parse_number(data['modal'], default=0.0)
+                if modal > price:
+                    resp['msg'] = 'Modal tidak boleh lebih besar dari harga jual'
+                    return HttpResponse(json.dumps(resp), content_type="application/json")
+                Products.objects.filter(id = data['id']).update(code=data['code'], category_id=category, name=data['name'], price = price, modal=modal, stock=new_stock)
                 restock = Restock.objects.filter(product_id=data['id']).last()
                 Restock.objects.filter(id=restock.pk).update(sale=0, f_restock_before=restock.f_restock, f_restock=0)
             # create   
             else:
-                stock = int(data['stock'])
+                stock = parse_number(data['stock'], default=0, as_int=True)
+                price = parse_number(data['price'], default=0.0)
+                modal = parse_number(data['modal'], default=0.0)
+                if modal > price:
+                    resp['msg'] = 'Modal tidak boleh lebih besar dari harga jual'
+                    return HttpResponse(json.dumps(resp), content_type="application/json")
                 status = True if stock > 0 else False
-                save_product = Products(code=data['code'], category_id=category, name=data['name'], price = float(data['price']), status = status, stock=int(data['stock']))
+                save_product = Products(code=data['code'], category_id=category, name=data['name'], price = price, modal=modal, status = status, stock=stock)
                 save_product.save()
                 Restock(product_id=save_product, f_restock_before=stock).save()
 
@@ -263,7 +307,13 @@ def pos(request):
     products = Products.objects.filter(status = 1)
     product_json = []
     for product in products:
-        product_json.append({'id':product.id, 'name':product.name, 'price':float(product.price), 'stock':int(product.stock)})
+        product_json.append({
+            'id': product.id,
+            'name': product.name,
+            'price': float(product.price),
+            'modal': float(product.modal),
+            'stock': int(product.stock)
+        })
     context = {
         'page_title' : "Point of Sale",
         'products' : products,
@@ -302,26 +352,57 @@ def save_pos(request):
     code = str(pref) + str(code)
 
     try:
-        sales = Sales(code=code, sub_total = data['sub_total'], grand_total = data['grand_total'], tendered_amount = data['tendered_amount'], amount_change = data['amount_change']).save()
-        sale_id = Sales.objects.last().pk
+        sub_total = parse_number(data.get('sub_total', ''), default=0.0)
+        grand_total = parse_number(data.get('grand_total', ''), default=0.0)
+        tendered_amount = parse_number(data.get('tendered_amount', ''), default=0.0)
+        amount_change = parse_number(data.get('amount_change', ''), default=0.0)
+        if amount_change < 0:
+            resp['msg'] = 'Jumlah kembalian tidak valid.'
+            return HttpResponse(json.dumps(resp), content_type="application/json")
+
+        sale_obj = Sales(
+            code=code,
+            sub_total=sub_total,
+            grand_total=grand_total,
+            tendered_amount=tendered_amount,
+            amount_change=amount_change,
+            profit=0.0,
+        )
+        sale_obj.save()
+        sale_id = sale_obj.pk
+        sale_profit = 0
         i = 0
         for prod in data.getlist('product_id[]'):
-            product_id = prod 
+            product_id = prod
             sale = Sales.objects.filter(id=sale_id).first()
             product = Products.objects.filter(id=product_id).first()
             latest_restock = Restock.objects.filter(product_id=product_id).last()
-            qty = data.getlist('qty[]')[i]
-            terjual = latest_restock.sale 
-            price = data.getlist('price[]')[i] 
-            total = float(qty) * float(price)
-            stock_now = product.stock - int(qty)
-            sale_now = terjual + int(qty)
+            qty = parse_number(data.getlist('qty[]')[i], default=0, as_int=True)
+            terjual = latest_restock.sale
+            price = parse_number(data.getlist('price[]')[i], default=0.0)
+            modal = parse_number(data.getlist('modal[]')[i], default=0.0)
+            if modal > price:
+                resp['msg'] = 'Modal tidak boleh lebih besar dari harga jual.'
+                return HttpResponse(json.dumps(resp), content_type="application/json")
+            total = qty * price
+            profit = (price - modal) * qty
+            sale_profit += profit
+            stock_now = product.stock - qty
+            sale_now = terjual + qty
             Products.objects.filter(id=product_id).update(stock=stock_now)
             Restock.objects.filter(id=latest_restock.pk).update(sale=sale_now)
             predict_f_restock(latest_restock.pk)
-            print({'sale_id' : sale, 'product_id' : product, 'qty' : qty, 'price' : price, 'total' : total})
-            salesItems(sale_id = sale, product_id = product, qty = qty, price = price, total = total).save()
-            i += int(1)
+            salesItems(
+                sale_id=sale,
+                product_id=product,
+                qty=qty,
+                price=price,
+                modal=modal,
+                total=total,
+                profit=profit,
+            ).save()
+            i += 1
+        Sales.objects.filter(id=sale_id).update(profit=sale_profit)
             
         resp['status'] = 'success'
         resp['sale_id'] = sale_id
@@ -415,7 +496,7 @@ def export_sales_excel(request):
     ws = wb.active
     ws.title = 'Data Transaksi'
 
-    headers = ['Tanggal', 'Kode Transaksi', 'Subtotal', 'Grand Total', 'Dibayar', 'Kembalian']
+    headers = ['Tanggal', 'Kode Transaksi', 'Subtotal', 'Grand Total', 'Dibayar', 'Kembalian', 'Laba']
     ws.append(headers)
 
     for sale in sales:
@@ -426,6 +507,7 @@ def export_sales_excel(request):
             sale.grand_total,
             sale.tendered_amount,
             sale.amount_change,
+            sale.profit,
         ])
 
     for cell in ws[1]:
@@ -465,9 +547,23 @@ def delete_sale(request):
         delete = Sales.objects.filter(id = id).delete()
         resp['status'] = 'success'
         messages.success(request, 'Sale Record has been deleted.')
-    except:
+    except Exception as e:
         resp['msg'] = "An error occured"
         print("Unexpected error:", sys.exc_info()[0])
+        print(e)
+    return HttpResponse(json.dumps(resp), content_type='application/json')
+
+@login_required
+def delete_all_sales(request):
+    resp = {'status':'failed', 'msg':''}
+    try:
+        Sales.objects.all().delete()
+        resp['status'] = 'success'
+        messages.success(request, 'Semua riwayat transaksi telah dihapus.')
+    except Exception as e:
+        resp['msg'] = "An error occured"
+        print("Unexpected error:", sys.exc_info()[0])
+        print(e)
     return HttpResponse(json.dumps(resp), content_type='application/json')
 
 def guest_product_display(request):

@@ -26,6 +26,7 @@ urlpatterns = [
     path('sales/export-excel', views.export_sales_excel, name="sales-export-excel"),
     path('receipt', views.receipt, name="receipt-modal"),
     path('delete_sale', views.delete_sale, name="delete-sale"),
+    path('delete_all_sales', views.delete_all_sales, name="delete-all-sales"),
     path('restock-list/', views.restock_list, name='restock-list'),
     path('display/', views.guest_product_display, name='guest-product-display'),
     # path('employees', views.employees, name="employee-page"),

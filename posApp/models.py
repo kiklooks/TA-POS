@@ -40,6 +40,7 @@ class Products(models.Model):
     category_id = models.ForeignKey(Category, on_delete=models.CASCADE)
     name = models.TextField()
     price = models.FloatField(default=0)
+    modal = models.FloatField(default=0)
     status = models.IntegerField(default=1)
     stock = models.BigIntegerField(default=0)
     # sale = models.BigIntegerField(default=0)
@@ -67,6 +68,7 @@ class Sales(models.Model):
     # tax = models.FloatField(default=0)
     tendered_amount = models.FloatField(default=0)
     amount_change = models.FloatField(default=0)
+    profit = models.FloatField(default=0)
     date_added = models.DateTimeField(default=timezone.now) 
     date_updated = models.DateTimeField(auto_now=True) 
 
@@ -77,5 +79,7 @@ class salesItems(models.Model):
     sale_id = models.ForeignKey(Sales,on_delete=models.CASCADE)
     product_id = models.ForeignKey(Products,on_delete=models.CASCADE)
     price = models.FloatField(default=0)
+    modal = models.FloatField(default=0)
     qty = models.FloatField(default=0)
     total = models.FloatField(default=0)
+    profit = models.FloatField(default=0)
