@@ -521,6 +521,101 @@ def export_sales_excel(request):
     return response
 
 @login_required
+def profitList(request):
+    profits = Sales.objects.all().order_by('-date_added')
+    year = request.GET.get('year', '')
+    month = request.GET.get('month', '')
+    start_month = request.GET.get('start_month', '')
+    end_month = request.GET.get('end_month', '')
+    date = request.GET.get('date', '')
+
+    if year:
+        profits = profits.filter(date_added__year=year)
+    if date:
+        profits = profits.filter(date_added__date=date)
+    if month:
+        profits = profits.filter(date_added__month=month)
+    elif start_month and end_month:
+        profits = profits.filter(date_added__month__gte=start_month, date_added__month__lte=end_month)
+
+    profit_data = []
+    total_profit = 0
+    for sale in profits:
+        data = {
+            'id': sale.id,
+            'date_added': sale.date_added,
+            'profit': sale.profit,
+        }
+        total_profit += sale.profit
+        profit_data.append(data)
+
+    year_choices = list(Sales.objects.dates('date_added', 'year', order='DESC'))
+    year_choices = [y.year for y in year_choices]
+    month_choices = [
+        (1, 'Januari'), (2, 'Februari'), (3, 'Maret'), (4, 'April'),
+        (5, 'Mei'), (6, 'Juni'), (7, 'Juli'), (8, 'Agustus'),
+        (9, 'September'), (10, 'Oktober'), (11, 'November'), (12, 'Desember')
+    ]
+
+    context = {
+        'page_title': 'Laporan Laba',
+        'profit_data': profit_data,
+        'total_profit': total_profit,
+        'selected_year': year,
+        'selected_month': month,
+        'selected_start_month': start_month,
+        'selected_end_month': end_month,
+        'selected_date': date,
+        'year_choices': year_choices,
+        'month_choices': month_choices,
+    }
+    return render(request, 'posApp/profit.html', context)
+
+@login_required
+def export_profit_excel(request):
+    year = request.GET.get('year', '')
+    month = request.GET.get('month', '')
+    start_month = request.GET.get('start_month', '')
+    end_month = request.GET.get('end_month', '')
+    date = request.GET.get('date', '')
+
+    profits = Sales.objects.all().order_by('-date_added')
+    if year:
+        profits = profits.filter(date_added__year=year)
+    if date:
+        profits = profits.filter(date_added__date=date)
+    if month:
+        profits = profits.filter(date_added__month=month)
+    elif start_month and end_month:
+        profits = profits.filter(date_added__month__gte=start_month, date_added__month__lte=end_month)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Laporan Laba'
+
+    headers = ['Tanggal', 'Kode Transaksi', 'Jumlah Item', 'Total Penjualan', 'Laba']
+    ws.append(headers)
+
+    for sale in profits:
+        ws.append([
+            sale.date_added.strftime('%Y-%m-%d %H:%M'),
+            sale.code,
+            salesItems.objects.filter(sale_id=sale).count(),
+            sale.grand_total,
+            sale.profit,
+        ])
+
+    for cell in ws[1]:
+        cell.font = Font(bold=True, color='FFFFFF')
+        cell.fill = PatternFill("solid", fgColor="4F81BD")
+        cell.alignment = Alignment(horizontal='center')
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="laporan_laba.xlsx"'
+    wb.save(response)
+    return response
+
+@login_required
 def receipt(request):
     id = request.GET.get('id')
     sales = Sales.objects.filter(id = id).first()
