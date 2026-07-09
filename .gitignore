@@ -1,0 +1,41 @@
+# Virtual Environment
+djangolts-env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment Variables
+.env
+
+# SQLite Database
+db.sqlite3
+db_backup.sqlite3
+
+# Static files hasil collectstatic
+staticfiles/
+
+# Media (jika nanti digunakan)
+media/
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Pytest / Coverage (opsional)
+.pytest_cache/
+.coverage
+htmlcov/
+
+__pycache__/
+*.py[cod]
+
+data.json
+posApp_data.json
