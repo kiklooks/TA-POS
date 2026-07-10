@@ -1,7 +1,7 @@
 from pickle import FALSE
 from django.shortcuts import redirect, render
 from django.http import HttpResponse
-from django.http import Jsonresponse
+from django.http import JsonResponse
 from posApp.models import Category, Products, Sales, salesItems, Restock
 from django.utils.safestring import mark_safe
 from django.db.models import Count, Sum
