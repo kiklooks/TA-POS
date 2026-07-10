@@ -53,7 +53,6 @@
                                         {% csrf_token %}
                                         <div class="mdc-layout-grid">
                                             <div class="mdc-layout-grid__inner">
-                                                <form action="" id="login" method="post">
                                                     <div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12">
                                                         <div class="mdc-text-field w-100">
                                                             <input class="mdc-text-field__input" name="username" id="text-field-hero-input">
@@ -69,11 +68,10 @@
                                                         </div>
                                                     </div>
                                                     <div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12">
-                                                        <button class="mdc-button mdc-button--raised w-100">
+                                                        <button type="submit" class="mdc-button mdc-button--raised w-100">
                                                             Login
                                                         </button>
                                                     </div>
-                                                </form>
                                             </div>
                                         </div>
                                     </form>
