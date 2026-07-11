@@ -148,3 +148,9 @@ STORAGES = {
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/login'
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://ta-pos-production.up.railway.app",
+    "https://*.up.railway.app",
+]
